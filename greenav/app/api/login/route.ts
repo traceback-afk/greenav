@@ -1,0 +1,79 @@
+import { pool } from "@/lib/db";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { NextRequest, NextResponse } from "next/server";
+
+type LoginBody = {
+  email: string;
+  password: string;
+};
+
+type User = {
+  id: number;
+  email: string;
+  password: string;
+  name: string;
+  role: "admin" | "farmer";
+};
+
+export async function POST(req: NextRequest) {
+  const { email, password }: LoginBody = await req.json();
+
+  // 1. Get user
+  const userResult = await pool.query<User>(
+    "SELECT * FROM users WHERE email = $1",
+    [email]
+  );
+  const user = userResult.rows[0];
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "Invalid credentials" },
+      { status: 401 }
+    );
+  }
+
+  // 2. Check password
+  const isValid = await bcrypt.compare(password, user.password);
+
+  if (!isValid) {
+    return NextResponse.json(
+      { error: "Invalid credentials" },
+      { status: 401 }
+    );
+  }
+
+  // 3. Role is already in DB
+  const role = user.role;
+
+  // 4. Create token
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      role,
+    },
+    process.env.JWT_SECRET as string,
+    { expiresIn: "7d" }
+  );
+
+  // 5. Create response with user data
+  const response = NextResponse.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role,
+    },
+  });
+
+  // 6. Set HTTP-only cookie
+  response.cookies.set("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: "/",
+  });
+
+  return response;
+}

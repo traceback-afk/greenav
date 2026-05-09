@@ -2,34 +2,18 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    name TEXT NOT NULL
-);
-
-CREATE TABLE admins (
-    user_id INTEGER PRIMARY KEY,
-    salary NUMERIC,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE farmers (
-    user_id INTEGER PRIMARY KEY,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('admin', 'farmer'))
 );
 
 
-WITH new_user AS (
-    INSERT INTO users (email, password, name)
-    VALUES ('admin@test.com', 'hashed_password', 'Admin User')
-    RETURNING id
-)
-INSERT INTO admins (user_id, salary)
-SELECT id, 5000 FROM new_user;
+INSERT INTO users (email, password, name, role)
+VALUES
+('admin1@example.com', 'hashed_password_1', 'Admin One', 'admin'),
+('admin2@example.com', 'hashed_password_2', 'Admin Two', 'admin');
 
-
-WITH new_user AS (
-    INSERT INTO users (email, password, name)
-    VALUES ('farmer@test.com', 'hashed_password', 'Farmer User')
-    RETURNING id
-)
-INSERT INTO farmers (user_id)
-SELECT id FROM new_user;
+INSERT INTO users (email, password, name, role)
+VALUES
+('farmer1@example.com', 'hashed_password_3', 'Farmer One', 'farmer'),
+('farmer2@example.com', 'hashed_password_4', 'Farmer Two', 'farmer'),
+('farmer3@example.com', 'hashed_password_5', 'Farmer Three', 'farmer');
