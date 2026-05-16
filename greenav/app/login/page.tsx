@@ -35,7 +35,15 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      // Redirect based on user role
+      if (data.user?.role === "admin") {
+        router.push("/admin");
+      } else if (data.user?.role === "farmer") {
+        router.push("/farmer");
+      } else {
+        router.push("/");
+      }
+
       router.refresh();
     } catch (err) {
       setLoading(false);

@@ -7,17 +7,6 @@ CREATE TABLE users (
 );
 
 
--- INSERT INTO users (email, password, name, role)
--- VALUES
--- ('admin1@example.com', 'hashed_password_1', 'Admin One', 'admin'),
--- ('admin2@example.com', 'hashed_password_2', 'Admin Two', 'admin');
-
--- INSERT INTO users (email, password, name, role)
--- VALUES
--- ('farmer1@example.com', 'hashed_password_3', 'Farmer One', 'farmer'),
--- ('farmer2@example.com', 'hashed_password_4', 'Farmer Two', 'farmer'),
--- ('farmer3@example.com', 'hashed_password_5', 'Farmer Three', 'farmer');
-
 -- Farm Table
 CREATE TABLE farm (
     id SERIAL PRIMARY KEY,
@@ -150,3 +139,124 @@ CREATE TABLE trigger_sensor (
     FOREIGN KEY (trigger_id) REFERENCES alert_trigger(alert_id) ON DELETE CASCADE,
     FOREIGN KEY (sensor_data_id) REFERENCES sensor_data(id) ON DELETE CASCADE
 );
+
+
+-- seed data
+
+-- Users
+INSERT INTO users (email, password, name, role) VALUES
+('admin@smartfarm.com', '$2b$10$hashed_admin_password', 'System Admin', 'admin'),
+('john@farm.com', '$2b$10$hashed_farmer_password', 'John Doe', 'farmer'),
+('sarah@farm.com', '$2b$10$hashed_farmer_password', 'Sarah Smith', 'farmer');
+
+-- Farms
+INSERT INTO farm (farmer_id, name, size, location, soil_type, planting_date, harvest_date) VALUES
+(2, 'Green Valley Farm', 120.5, 'Mersin, Türkiye', 'Loamy', '2026-03-01', '2026-08-15'),
+(2, 'Sunrise Farm', 75.0, 'Adana, Türkiye', 'Clay', '2026-04-10', '2026-09-20'),
+(3, 'Golden Harvest Farm', 200.0, 'Antalya, Türkiye', 'Sandy Loam', '2026-02-20', '2026-07-30');
+
+-- Machines
+INSERT INTO machine (name, type, status) VALUES
+('John Deere 5075E', 'Tractor', 'working'),
+('Case IH Axial-Flow', 'Harvester', 'idle'),
+('Kubota M7060', 'Tractor', 'maintain'),
+('DJI Agras T40', 'Drone Sprayer', 'working'),
+('New Holland BB1290', 'Baler', 'idle');
+
+-- Works on Farm
+INSERT INTO works_on_farm (farm_id, machine_id) VALUES
+(1, 1),
+(1, 4),
+(2, 3),
+(3, 2),
+(3, 5);
+
+-- Fields
+INSERT INTO field (farm_id, name, area) VALUES
+(1, 'North Field', 50.0),
+(1, 'South Field', 70.5),
+(2, 'East Field', 75.0),
+(3, 'Main Field', 120.0),
+(3, 'West Field', 80.0);
+
+-- Crops
+INSERT INTO crop (name, growth_duration, local_temp, ideal_moisture) VALUES
+('Wheat', 120, 22.5, 45.0),
+('Corn', 90, 28.0, 60.0),
+('Tomato', 75, 24.0, 70.0),
+('Cotton', 180, 30.0, 50.0),
+('Barley', 110, 20.0, 40.0);
+
+-- Contains (Field contains Crop)
+INSERT INTO contains (field_id, crop_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- Planted In (same relationships as contains)
+INSERT INTO planted_in (crop_id, field_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- IoT Sensors
+INSERT INTO iot_sensor (type, status, install_date) VALUES
+('Temp', 'active', '2026-01-15'),
+('Humidity', 'active', '2026-01-16'),
+('Moist', 'active', '2026-01-17'),
+('Temp', 'inactive', '2026-02-01'),
+('Moist', 'active', '2026-02-05');
+
+-- Installed In (Field installed with sensors)
+INSERT INTO installed_in (field_id, sensor_id) VALUES
+(1, 1),
+(1, 3),
+(2, 2),
+(3, 4),
+(4, 5);
+
+-- Works on Field
+INSERT INTO works_on_field (field_id, machine_id) VALUES
+(1, 1),
+(2, 4),
+(3, 3),
+(4, 2),
+(5, 5);
+
+-- Sensor Data
+INSERT INTO sensor_data (value, unit, reading_time) VALUES
+(24.5, '°C', '2026-05-15 08:00:00'),
+(65.0, '%', '2026-05-15 08:05:00'),
+(42.3, '%', '2026-05-15 08:10:00'),
+(31.2, '°C', '2026-05-15 08:15:00'),
+(28.7, '%', '2026-05-15 08:20:00');
+
+-- Generates (Sensor generates Sensor Data)
+INSERT INTO generates (sensor_id, sensor_data_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- Alerts
+INSERT INTO alert (message, timestamp, severity) VALUES
+('Soil moisture is below optimal level in North Field.', '2026-05-15 08:15:00', 'Medium'),
+('Temperature exceeds safe threshold in East Field.', '2026-05-15 08:20:00', 'High'),
+('Humidity level slightly below recommended range.', '2026-05-15 08:25:00', 'Low');
+
+-- Alert Triggers
+INSERT INTO alert_trigger (alert_id) VALUES
+(1),
+(2),
+(3);
+
+-- Trigger Sensor (which sensor data caused each alert)
+INSERT INTO trigger_sensor (trigger_id, sensor_data_id) VALUES
+(1, 3),
+(2, 4),
+(3, 2);
