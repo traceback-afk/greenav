@@ -1,9 +1,7 @@
-// app/api/relationships-admin/route.ts
 import { pool } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-// ===== INSTALLED_IN (Sensor installed in Field) =====
 export async function GET_INSTALLED_IN(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -78,7 +76,6 @@ export async function DELETE_INSTALLED_IN(req: NextRequest) {
   }
 }
 
-// ===== GENERATES (Sensor generates Sensor_data) =====
 export async function GET_GENERATES(req: NextRequest) {
   try {
     const user = await getCurrentUser();

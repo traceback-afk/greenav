@@ -1,9 +1,7 @@
-// app/api/relationships/route.ts
 import { pool } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-// ===== CONTAINS (Field Contains Crop) =====
 export async function GET_CONTAINS(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -78,7 +76,6 @@ export async function DELETE_CONTAINS(req: NextRequest) {
   }
 }
 
-// ===== WORKS_ON_FARM =====
 export async function GET_WORKS_ON_FARM(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -153,7 +150,6 @@ export async function DELETE_WORKS_ON_FARM(req: NextRequest) {
   }
 }
 
-// ===== WORKS_ON_FIELD =====
 export async function GET_WORKS_ON_FIELD(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -228,7 +224,6 @@ export async function DELETE_WORKS_ON_FIELD(req: NextRequest) {
   }
 }
 
-// ===== PLANTED_IN =====
 export async function GET_PLANTED_IN(req: NextRequest) {
   try {
     const user = await getCurrentUser();

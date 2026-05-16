@@ -1,4 +1,3 @@
-// app/components/DataTable.tsx
 "use client";
 
 interface Column {

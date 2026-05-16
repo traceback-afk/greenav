@@ -19,7 +19,6 @@ type User = {
 export async function POST(req: NextRequest) {
   const { email, password }: LoginBody = await req.json();
 
-  // 1. Get user
   const userResult = await pool.query<User>(
     "SELECT * FROM users WHERE email = $1",
     [email]
@@ -33,7 +32,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Check password
   const isValid = await bcrypt.compare(password, user.password);
 
   if (!isValid) {
@@ -43,10 +41,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. Role is already in DB
   const role = user.role;
 
-  // 4. Create token
   const token = jwt.sign(
     {
       userId: user.id,
@@ -56,7 +52,6 @@ export async function POST(req: NextRequest) {
     { expiresIn: "7d" }
   );
 
-  // 5. Create response with user data
   const response = NextResponse.json({
     user: {
       id: user.id,
@@ -65,8 +60,7 @@ export async function POST(req: NextRequest) {
       role,
     },
   });
-
-  // 6. Set HTTP-only cookie
+  
   response.cookies.set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

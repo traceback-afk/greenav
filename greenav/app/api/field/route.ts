@@ -1,4 +1,3 @@
-// app/api/field/route.ts
 import { pool } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";

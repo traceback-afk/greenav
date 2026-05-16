@@ -260,3 +260,97 @@ INSERT INTO trigger_sensor (trigger_id, sensor_data_id) VALUES
 (1, 3),
 (2, 4),
 (3, 2);
+
+
+
+
+
+
+
+-- sensor alert trigger
+
+-- Function: Create alerts automatically when sensor data is inserted
+CREATE OR REPLACE FUNCTION check_sensor_alert()
+RETURNS TRIGGER AS $$
+DECLARE
+    sensor_type TEXT;
+    alert_message TEXT;
+    alert_severity TEXT;
+    new_alert_id INT;
+BEGIN
+    -- Find the sensor type that generated this sensor_data row
+    SELECT s.type
+    INTO sensor_type
+    FROM generates g
+    JOIN iot_sensor s ON s.id = g.sensor_id
+    WHERE g.sensor_data_id = NEW.id
+    LIMIT 1;
+
+    -- If no sensor is linked yet, do nothing
+    IF sensor_type IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    -- Temperature sensor rules
+    IF sensor_type = 'Temp' THEN
+        IF NEW.value > 35 THEN
+            alert_message := 'High temperature detected: ' || NEW.value || ' °C';
+            alert_severity := 'High';
+        ELSIF NEW.value < 5 THEN
+            alert_message := 'Low temperature detected: ' || NEW.value || ' °C';
+            alert_severity := 'Medium';
+        END IF;
+    END IF;
+
+    -- Humidity sensor rules
+    IF sensor_type = 'Humidity' THEN
+        IF NEW.value < 30 THEN
+            alert_message := 'Low humidity detected: ' || NEW.value || ' %';
+            alert_severity := 'Medium';
+        ELSIF NEW.value > 90 THEN
+            alert_message := 'High humidity detected: ' || NEW.value || ' %';
+            alert_severity := 'Low';
+        END IF;
+    END IF;
+
+    -- Soil moisture sensor rules
+    IF sensor_type = 'Moist' THEN
+        IF NEW.value < 25 THEN
+            alert_message := 'Critical low soil moisture: ' || NEW.value || ' %';
+            alert_severity := 'High';
+        ELSIF NEW.value < 40 THEN
+            alert_message := 'Low soil moisture detected: ' || NEW.value || ' %';
+            alert_severity := 'Medium';
+        ELSIF NEW.value > 85 THEN
+            alert_message := 'Excessive soil moisture detected: ' || NEW.value || ' %';
+            alert_severity := 'Low';
+        END IF;
+    END IF;
+
+    -- If an alert condition was met, create the alert and relationships
+    IF alert_message IS NOT NULL THEN
+        -- Insert into alert table
+        INSERT INTO alert (message, timestamp, severity)
+        VALUES (alert_message, NEW.reading_time, alert_severity)
+        RETURNING id INTO new_alert_id;
+
+        -- Insert into alert_trigger table
+        INSERT INTO alert_trigger (alert_id)
+        VALUES (new_alert_id);
+
+        -- Link trigger to the sensor data that caused it
+        INSERT INTO trigger_sensor (trigger_id, sensor_data_id)
+        VALUES (new_alert_id, NEW.id);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Trigger: Runs after a new relationship is created between sensor and sensor_data
+-- This is the correct place because the sensor type is only known after inserting into generates
+CREATE OR REPLACE TRIGGER trg_check_sensor_alert
+AFTER INSERT ON generates
+FOR EACH ROW
+EXECUTE FUNCTION check_sensor_alert();

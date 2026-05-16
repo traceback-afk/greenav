@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function FarmerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -25,27 +25,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <div className="p-6 border-b border-zinc-800">
           <h1
-            className={`text-xl font-bold bg-linear-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent ${
+            className={`text-xl font-bold bg-linear-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent ${
               !sidebarOpen && "text-center"
             }`}
           >
-            {sidebarOpen ? "GreenAV Admin" : "GA"}
+            {sidebarOpen ? "GreenAV Farm" : "GF"}
           </h1>
         </div>
 
         <nav className="p-4 space-y-2">
           {[
-            { href: "/admin", label: "Dashboard", icon: "📊" },
-            { href: "/admin/farmers", label: "Farmers", icon: "👨‍🌾" },
-            { href: "/admin/farms", label: "Farms", icon: "🌾" },
-            { href: "/admin/fields", label: "Fields", icon: "🌱" },
-            { href: "/admin/crops", label: "Crops", icon: "🌽" },
-            { href: "/admin/machines", label: "Machines", icon: "⚙️" },
-            { href: "/admin/sensors", label: "Sensors", icon: "📡" },
-            { href: "/admin/alerts", label: "Alerts", icon: "⚠️" },
+            { href: "/farmer", label: "Dashboard", icon: "📊" },
+            { href: "/farmer/farms", label: "My Farms", icon: "🌾" },
+            { href: "/farmer/fields", label: "Fields", icon: "🌱" },
+            { href: "/farmer/crops", label: "Crops", icon: "🌽" },
+            { href: "/farmer/machines", label: "Machines", icon: "⚙️" },
+            { href: "/farmer/alerts", label: "Alerts", icon: "⚠️" },
           ].map((item) => (
             <Link key={item.href} href={item.href}>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-zinc-800 transition text-zinc-300 hover:text-emerald-400 cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-zinc-800 transition text-zinc-300 hover:text-amber-400 cursor-pointer">
                 <span className="text-xl">{item.icon}</span>
                 {sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
               </div>

@@ -5,12 +5,11 @@ export async function POST() {
     message: "Logged out successfully",
   });
 
-  // Clear the token cookie
   response.cookies.set("token", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 0, // This immediately expires the cookie
+    maxAge: 0,
     path: "/",
   });
 
