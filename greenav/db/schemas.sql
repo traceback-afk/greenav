@@ -6,35 +6,24 @@ CREATE TABLE users (
     role TEXT NOT NULL CHECK (role IN ('admin', 'farmer'))
 );
 
-
--- Farm Table
+-- Farm Table (owned by admin, worked on by farmers)
 CREATE TABLE farm (
     id SERIAL PRIMARY KEY,
-    farmer_id INT NOT NULL,
     name TEXT NOT NULL,
     size NUMERIC NOT NULL,
     location TEXT NOT NULL,
     soil_type TEXT,
     planting_date DATE,
-    harvest_date DATE,
-    FOREIGN KEY (farmer_id) REFERENCES users(id) ON DELETE CASCADE
+    harvest_date DATE
 );
 
--- Machine Table
-CREATE TABLE machine (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('idle', 'working', 'maintain'))
-);
-
--- Machine WorksOn Farm (relationship)
+-- Farmer WorksOn Farm (relationship) - farmers work on farms
 CREATE TABLE works_on_farm (
+    farmer_id INT NOT NULL,
     farm_id INT NOT NULL,
-    machine_id INT NOT NULL,
-    PRIMARY KEY (farm_id, machine_id),
-    FOREIGN KEY (farm_id) REFERENCES farm(id) ON DELETE CASCADE,
-    FOREIGN KEY (machine_id) REFERENCES machine(id) ON DELETE CASCADE
+    PRIMARY KEY (farmer_id, farm_id),
+    FOREIGN KEY (farmer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (farm_id) REFERENCES farm(id) ON DELETE CASCADE
 );
 
 -- Field Table
@@ -43,34 +32,8 @@ CREATE TABLE field (
     farm_id INT NOT NULL,
     name TEXT NOT NULL,
     area NUMERIC NOT NULL,
+    status TEXT CHECK (status IN ('Plant', 'Growth', 'Harvest')),
     FOREIGN KEY (farm_id) REFERENCES farm(id) ON DELETE CASCADE
-);
-
--- Field Contains Crop (relationship)
-CREATE TABLE contains (
-    field_id INT NOT NULL,
-    crop_id INT NOT NULL,
-    PRIMARY KEY (field_id, crop_id),
-    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
-    FOREIGN KEY (crop_id) REFERENCES crop(id) ON DELETE CASCADE
-);
-
--- Field Installed_in IoT_Sensor (relationship)
-CREATE TABLE installed_in (
-    field_id INT NOT NULL,
-    sensor_id INT NOT NULL,
-    PRIMARY KEY (field_id, sensor_id),
-    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
-    FOREIGN KEY (sensor_id) REFERENCES iot_sensor(id) ON DELETE CASCADE
-);
-
--- Machine WorksOn Field (relationship)
-CREATE TABLE works_on_field (
-    field_id INT NOT NULL,
-    machine_id INT NOT NULL,
-    PRIMARY KEY (field_id, machine_id),
-    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
-    FOREIGN KEY (machine_id) REFERENCES machine(id) ON DELETE CASCADE
 );
 
 -- Crop Table
@@ -82,6 +45,15 @@ CREATE TABLE crop (
     ideal_moisture NUMERIC
 );
 
+-- Field Contains Crop (relationship)
+CREATE TABLE contains (
+    field_id INT NOT NULL,
+    crop_id INT NOT NULL,
+    PRIMARY KEY (field_id, crop_id),
+    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
+    FOREIGN KEY (crop_id) REFERENCES crop(id) ON DELETE CASCADE
+);
+
 -- Crop Planted_in Field (relationship)
 CREATE TABLE planted_in (
     crop_id INT NOT NULL,
@@ -91,12 +63,56 @@ CREATE TABLE planted_in (
     FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE
 );
 
+-- Machine Table
+CREATE TABLE machine (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('idle', 'working', 'maintain'))
+);
+
+-- Machine WorksOn Farm (relationship)
+CREATE TABLE works_on_farm_machine (
+    farm_id INT NOT NULL,
+    machine_id INT NOT NULL,
+    PRIMARY KEY (farm_id, machine_id),
+    FOREIGN KEY (farm_id) REFERENCES farm(id) ON DELETE CASCADE,
+    FOREIGN KEY (machine_id) REFERENCES machine(id) ON DELETE CASCADE
+);
+
+-- Machine WorksOn Field (relationship)
+CREATE TABLE works_on_field (
+    field_id INT NOT NULL,
+    machine_id INT NOT NULL,
+    PRIMARY KEY (field_id, machine_id),
+    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
+    FOREIGN KEY (machine_id) REFERENCES machine(id) ON DELETE CASCADE
+);
+
 -- IoT_Sensor Table
 CREATE TABLE iot_sensor (
     id SERIAL PRIMARY KEY,
     type TEXT NOT NULL CHECK (type IN ('Temp', 'Humidity', 'Moist')),
     status TEXT NOT NULL,
-    install_date DATE NOT NULL
+    install_date DATE NOT NULL,
+    sensor_id TEXT UNIQUE
+);
+
+-- Field Installed_in IoT_Sensor (relationship)
+CREATE TABLE installed_in (
+    field_id INT NOT NULL,
+    sensor_id INT NOT NULL,
+    PRIMARY KEY (field_id, sensor_id),
+    FOREIGN KEY (field_id) REFERENCES field(id) ON DELETE CASCADE,
+    FOREIGN KEY (sensor_id) REFERENCES iot_sensor(id) ON DELETE CASCADE
+);
+
+-- Sensor_data Table
+CREATE TABLE sensor_data (
+    id SERIAL PRIMARY KEY,
+    value NUMERIC NOT NULL,
+    unit TEXT NOT NULL,
+    reading_time TIMESTAMP NOT NULL
 );
 
 -- IoT_Sensor Generates Sensor_data (relationship)
@@ -108,14 +124,6 @@ CREATE TABLE generates (
     FOREIGN KEY (sensor_data_id) REFERENCES sensor_data(id) ON DELETE CASCADE
 );
 
--- Sensor_data Table
-CREATE TABLE sensor_data (
-    id SERIAL PRIMARY KEY,
-    value NUMERIC NOT NULL,
-    unit TEXT NOT NULL,
-    reading_time TIMESTAMP NOT NULL
-);
-
 -- Alert Table
 CREATE TABLE alert (
     id SERIAL PRIMARY KEY,
@@ -124,151 +132,144 @@ CREATE TABLE alert (
     severity TEXT NOT NULL CHECK (severity IN ('Low', 'Medium', 'High'))
 );
 
--- Alert Triggers by Alert_trigger (relationship)
-CREATE TABLE alert_trigger (
+-- Alert Triggers Sensor_data (relationship)
+CREATE TABLE triggers (
     alert_id INT NOT NULL,
-    PRIMARY KEY (alert_id),
-    FOREIGN KEY (alert_id) REFERENCES alert(id) ON DELETE CASCADE
-);
-
--- Alert_trigger connected to Sensor_data
-CREATE TABLE trigger_sensor (
-    trigger_id INT NOT NULL,
     sensor_data_id INT NOT NULL,
-    PRIMARY KEY (trigger_id, sensor_data_id),
-    FOREIGN KEY (trigger_id) REFERENCES alert_trigger(alert_id) ON DELETE CASCADE,
+    PRIMARY KEY (alert_id, sensor_data_id),
+    FOREIGN KEY (alert_id) REFERENCES alert(id) ON DELETE CASCADE,
     FOREIGN KEY (sensor_data_id) REFERENCES sensor_data(id) ON DELETE CASCADE
 );
 
 
 -- seed data
-
--- Users
+-- =========================
+-- USERS
+-- =========================
 INSERT INTO users (email, password, name, role) VALUES
-('admin@smartfarm.com', '$2b$10$hashed_admin_password', 'System Admin', 'admin'),
-('john@farm.com', '$2b$10$hashed_farmer_password', 'John Doe', 'farmer'),
-('sarah@farm.com', '$2b$10$hashed_farmer_password', 'Sarah Smith', 'farmer');
+('admin@farm.com', 'hashed_password_1', 'Main Admin', 'admin'),
+('farmer1@farm.com', 'hashed_password_2', 'Ali Farmer', 'farmer'),
+('farmer2@farm.com', 'hashed_password_3', 'Ayse Farmer', 'farmer');
 
--- Farms
-INSERT INTO farm (farmer_id, name, size, location, soil_type, planting_date, harvest_date) VALUES
-(2, 'Green Valley Farm', 120.5, 'Mersin, Türkiye', 'Loamy', '2026-03-01', '2026-08-15'),
-(2, 'Sunrise Farm', 75.0, 'Adana, Türkiye', 'Clay', '2026-04-10', '2026-09-20'),
-(3, 'Golden Harvest Farm', 200.0, 'Antalya, Türkiye', 'Sandy Loam', '2026-02-20', '2026-07-30');
+-- =========================
+-- FARM
+-- =========================
+INSERT INTO farm (name, size, location, soil_type, planting_date, harvest_date) VALUES
+('Green Valley Farm', 120.5, 'Mersin', 'Loamy', '2026-03-01', '2026-09-01'),
+('Sunrise Fields', 80.0, 'Adana', 'Sandy', '2026-02-15', '2026-08-20');
 
--- Machines
-INSERT INTO machine (name, type, status) VALUES
-('John Deere 5075E', 'Tractor', 'working'),
-('Case IH Axial-Flow', 'Harvester', 'idle'),
-('Kubota M7060', 'Tractor', 'maintain'),
-('DJI Agras T40', 'Drone Sprayer', 'working'),
-('New Holland BB1290', 'Baler', 'idle');
+-- =========================
+-- WORKS_ON_FARM (farmers assigned to farms)
+-- =========================
+INSERT INTO works_on_farm (farmer_id, farm_id) VALUES
+(2, 1),
+(3, 1),
+(3, 2);
 
--- Works on Farm
-INSERT INTO works_on_farm (farm_id, machine_id) VALUES
-(1, 1),
-(1, 4),
-(2, 3),
-(3, 2),
-(3, 5);
+-- =========================
+-- FIELD
+-- =========================
+INSERT INTO field (farm_id, name, area, status) VALUES
+(1, 'North Field', 40.0, 'Plant'),
+(1, 'South Field', 60.0, 'Growth'),
+(2, 'East Field', 30.0, 'Harvest');
 
--- Fields
-INSERT INTO field (farm_id, name, area) VALUES
-(1, 'North Field', 50.0),
-(1, 'South Field', 70.5),
-(2, 'East Field', 75.0),
-(3, 'Main Field', 120.0),
-(3, 'West Field', 80.0);
-
--- Crops
+-- =========================
+-- CROP
+-- =========================
 INSERT INTO crop (name, growth_duration, local_temp, ideal_moisture) VALUES
-('Wheat', 120, 22.5, 45.0),
-('Corn', 90, 28.0, 60.0),
-('Tomato', 75, 24.0, 70.0),
-('Cotton', 180, 30.0, 50.0),
-('Barley', 110, 20.0, 40.0);
+('Wheat', 120, 22.5, 60),
+('Corn', 90, 25.0, 55),
+('Tomato', 75, 24.0, 70);
 
--- Contains (Field contains Crop)
+-- =========================
+-- CONTAINS (field-crop availability)
+-- =========================
 INSERT INTO contains (field_id, crop_id) VALUES
 (1, 1),
-(2, 2),
-(3, 3),
-(4, 4),
-(5, 5);
+(1, 2),
+(2, 3),
+(3, 2);
 
--- Planted In (same relationships as contains)
+-- =========================
+-- PLANTED_IN (active crops)
+-- =========================
 INSERT INTO planted_in (crop_id, field_id) VALUES
 (1, 1),
-(2, 2),
-(3, 3),
-(4, 4),
-(5, 5);
+(3, 2),
+(2, 3);
 
--- IoT Sensors
-INSERT INTO iot_sensor (type, status, install_date) VALUES
-('Temp', 'active', '2026-01-15'),
-('Humidity', 'active', '2026-01-16'),
-('Moist', 'active', '2026-01-17'),
-('Temp', 'inactive', '2026-02-01'),
-('Moist', 'active', '2026-02-05');
+-- =========================
+-- MACHINE
+-- =========================
+INSERT INTO machine (name, type, status) VALUES
+('Tractor A1', 'Tractor', 'working'),
+('Irrigation Pump X', 'Irrigation', 'idle'),
+('Harvester Z', 'Harvester', 'maintain');
 
--- Installed In (Field installed with sensors)
-INSERT INTO installed_in (field_id, sensor_id) VALUES
+-- =========================
+-- WORKS_ON_FARM_MACHINE
+-- =========================
+INSERT INTO works_on_farm_machine (farm_id, machine_id) VALUES
 (1, 1),
-(1, 3),
-(2, 2),
-(3, 4),
-(4, 5);
+(1, 2),
+(2, 3);
 
--- Works on Field
+-- =========================
+-- WORKS_ON_FIELD (machines used on fields)
+-- =========================
 INSERT INTO works_on_field (field_id, machine_id) VALUES
 (1, 1),
-(2, 4),
-(3, 3),
-(4, 2),
-(5, 5);
+(2, 2),
+(3, 3);
 
--- Sensor Data
+-- =========================
+-- IOT_SENSOR
+-- =========================
+INSERT INTO iot_sensor (type, status, install_date, sensor_id) VALUES
+('Temp', 'active', '2026-01-10', 'SEN-T-001'),
+('Humidity', 'active', '2026-01-12', 'SEN-H-002'),
+('Moist', 'inactive', '2026-01-15', 'SEN-M-003');
+
+-- =========================
+-- INSTALLED_IN
+-- =========================
+INSERT INTO installed_in (field_id, sensor_id) VALUES
+(1, 1),
+(1, 2),
+(2, 3);
+
+-- =========================
+-- SENSOR_DATA
+-- =========================
 INSERT INTO sensor_data (value, unit, reading_time) VALUES
-(24.5, '°C', '2026-05-15 08:00:00'),
-(65.0, '%', '2026-05-15 08:05:00'),
-(42.3, '%', '2026-05-15 08:10:00'),
-(31.2, '°C', '2026-05-15 08:15:00'),
-(28.7, '%', '2026-05-15 08:20:00');
+(23.5, 'C', '2026-05-16 10:00:00'),
+(55.0, '%', '2026-05-16 10:05:00'),
+(61.2, '%', '2026-05-16 10:10:00');
 
--- Generates (Sensor generates Sensor Data)
+-- =========================
+-- GENERATES (sensor -> data)
+-- =========================
 INSERT INTO generates (sensor_id, sensor_data_id) VALUES
 (1, 1),
 (2, 2),
-(3, 3),
-(4, 4),
-(5, 5);
+(3, 3);
 
--- Alerts
+-- =========================
+-- ALERT
+-- =========================
 INSERT INTO alert (message, timestamp, severity) VALUES
-('Soil moisture is below optimal level in North Field.', '2026-05-15 08:15:00', 'Medium'),
-('Temperature exceeds safe threshold in East Field.', '2026-05-15 08:20:00', 'High'),
-('Humidity level slightly below recommended range.', '2026-05-15 08:25:00', 'Low');
+('Temperature too high in North Field', '2026-05-16 10:15:00', 'High'),
+('Humidity stable', '2026-05-16 10:20:00', 'Low');
 
--- Alert Triggers
-INSERT INTO alert_trigger (alert_id) VALUES
-(1),
-(2),
-(3);
-
--- Trigger Sensor (which sensor data caused each alert)
-INSERT INTO trigger_sensor (trigger_id, sensor_data_id) VALUES
-(1, 3),
-(2, 4),
-(3, 2);
-
-
-
-
-
-
+-- =========================
+-- TRIGGERS (alert -> sensor data)
+-- =========================
+INSERT INTO triggers (alert_id, sensor_data_id) VALUES
+(1, 1),
+(2, 2);
 
 -- sensor alert trigger
-
 -- Function: Create alerts automatically when sensor data is inserted
 CREATE OR REPLACE FUNCTION check_sensor_alert()
 RETURNS TRIGGER AS $$

@@ -64,7 +64,7 @@ export default function FieldsPage() {
   const handleDelete = async (id: number) => {
     if (confirm("Are you sure?")) {
       try {
-        const res = await fetch("/api/field", {
+        const res = await fetch(`/api/field/${id}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id }),

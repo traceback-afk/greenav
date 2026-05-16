@@ -1,5 +1,16 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import {
+  Users,
+  Tractor,
+  Map,
+  Sprout,
+  Cog,
+  Radar,
+  Bell,
+  LayoutDashboard,
+} from "lucide-react";
 
 interface Stats {
   farmers: number;
@@ -21,20 +32,27 @@ export default function AdminDashboard() {
     sensors: 0,
     alerts: 0,
   });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [farmsRes, fieldsRes, cropsRes, machinesRes, sensorsRes, alertsRes] =
-          await Promise.all([
-            fetch("/api/farm"),
-            fetch("/api/field"),
-            fetch("/api/crop"),
-            fetch("/api/machine"),
-            fetch("/api/iot-sensor"),
-            fetch("/api/alert"),
-          ]);
+        const [
+          farmsRes,
+          fieldsRes,
+          cropsRes,
+          machinesRes,
+          sensorsRes,
+          alertsRes,
+        ] = await Promise.all([
+          fetch("/api/farm"),
+          fetch("/api/field"),
+          fetch("/api/crop"),
+          fetch("/api/machine"),
+          fetch("/api/iot-sensor"),
+          fetch("/api/alert"),
+        ]);
 
         const farms = await farmsRes.json();
         const fields = await fieldsRes.json();
@@ -44,7 +62,7 @@ export default function AdminDashboard() {
         const alerts = await alertsRes.json();
 
         setStats({
-          farmers: farms.length, // Count unique farmers from farms
+          farmers: farms.length,
           farms: farms.length,
           fields: fields.length,
           crops: crops.length,
@@ -63,48 +81,104 @@ export default function AdminDashboard() {
   }, []);
 
   const statCards = [
-    { label: "Farmers", value: stats.farmers, icon: "👨‍🌾", color: "emerald" },
-    { label: "Farms", value: stats.farms, icon: "🌾", color: "blue" },
-    { label: "Fields", value: stats.fields, icon: "🌱", color: "green" },
-    { label: "Crops", value: stats.crops, icon: "🌽", color: "yellow" },
-    { label: "Machines", value: stats.machines, icon: "⚙️", color: "orange" },
-    { label: "Sensors", value: stats.sensors, icon: "📡", color: "purple" },
-    { label: "Alerts", value: stats.alerts, icon: "⚠️", color: "red" },
+    {
+      label: "Farmers",
+      value: stats.farmers,
+      icon: Users,
+      color: "text-emerald-400",
+    },
+    {
+      label: "Farms",
+      value: stats.farms,
+      icon: Tractor,
+      color: "text-blue-400",
+    },
+    {
+      label: "Fields",
+      value: stats.fields,
+      icon: Map,
+      color: "text-green-400",
+    },
+    {
+      label: "Crops",
+      value: stats.crops,
+      icon: Sprout,
+      color: "text-yellow-400",
+    },
+    {
+      label: "Machines",
+      value: stats.machines,
+      icon: Cog,
+      color: "text-orange-400",
+    },
+    {
+      label: "Sensors",
+      value: stats.sensors,
+      icon: Radar,
+      color: "text-purple-400",
+    },
+    {
+      label: "Alerts",
+      value: stats.alerts,
+      icon: Bell,
+      color: "text-red-400",
+    },
   ];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Welcome to GreenAV Admin</h1>
-        <p className="text-zinc-400">Manage all agricultural resources and operations</p>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <LayoutDashboard className="w-8 h-8 text-emerald-400" />
+        <div>
+          <h1 className="text-4xl font-bold text-white">
+            Welcome to GreenAV Admin
+          </h1>
+          <p className="text-zinc-400">
+            Manage all agricultural resources and operations
+          </p>
+        </div>
       </div>
 
+      {/* Stats */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((card) => (
-            <div
-              key={card.label}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition hover:shadow-lg hover:shadow-emerald-500/10"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-zinc-400 text-sm font-medium">{card.label}</p>
-                  <p className="text-3xl font-bold text-white mt-2">{card.value}</p>
+          {statCards.map((card) => {
+            const Icon = card.icon;
+
+            return (
+              <div
+                key={card.label}
+                className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition hover:shadow-lg hover:shadow-emerald-500/10"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-zinc-400 text-sm font-medium">
+                      {card.label}
+                    </p>
+                    <p className="text-3xl font-bold text-white mt-2">
+                      {card.value}
+                    </p>
+                  </div>
+
+                  <Icon className={`w-8 h-8 ${card.color}`} />
                 </div>
-                <span className="text-4xl">{card.icon}</span>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Quick Actions */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">
+          Quick Actions
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: "Add Crop", href: "/admin/crops" },

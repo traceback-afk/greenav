@@ -9,13 +9,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let query = "SELECT f.*, u.name as farmer_name FROM farm f JOIN users u ON f.farmer_id = u.id";
+    let query = "SELECT f.* FROM farm f";
     let params: any[] = [];
 
+    // Farmers see only farms they work on
     if (user.role === "farmer") {
-      query += " WHERE f.farmer_id = $1";
+      query += " JOIN works_on_farm wof ON f.id = wof.farm_id WHERE wof.farmer_id = $1";
       params.push(user.userId);
     }
+
+    query += " ORDER BY f.name";
 
     const result = await pool.query(query, params);
     return NextResponse.json(result.rows);
@@ -32,22 +35,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { farmer_id, name, size, location, soil_type, planting_date, harvest_date } = await req.json();
-
-    if (!name || !size || !location) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    // Only admins can create farms
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Unauthorized - admins only" },
+        { status: 401 }
+      );
     }
 
-    const actualFarmerId = user.role === "farmer" ? user.userId : (farmer_id || user.userId);
+    const { name, size, location, soil_type, planting_date, harvest_date } =
+      await req.json();
+
+    if (!name || !size || !location) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
     const result = await pool.query(
-      "INSERT INTO farm (farmer_id, name, size, location, soil_type, planting_date, harvest_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-      [actualFarmerId, name, size, location, soil_type, planting_date, harvest_date]
+      `INSERT INTO farm (name, size, location, soil_type, planting_date, harvest_date)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [name, size, location, soil_type, planting_date, harvest_date]
     );
 
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create farm" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create farm" },
+      { status: 500 }
+    );
   }
 }
