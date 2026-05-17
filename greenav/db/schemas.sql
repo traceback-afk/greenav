@@ -350,7 +350,6 @@ $$ LANGUAGE plpgsql;
 
 
 -- Trigger: Runs after a new relationship is created between sensor and sensor_data
--- This is the correct place because the sensor type is only known after inserting into generates
 CREATE OR REPLACE TRIGGER trg_check_sensor_alert
 AFTER INSERT ON generates
 FOR EACH ROW
@@ -358,10 +357,9 @@ EXECUTE FUNCTION check_sensor_alert();
 
 
 
--- =========================================================
--- 1. Automatically update machine status to 'working'
+-- Automatically update machine status to 'working'
 --    when a machine is assigned to a field
--- =========================================================
+
 CREATE OR REPLACE FUNCTION set_machine_working()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -379,10 +377,8 @@ FOR EACH ROW
 EXECUTE FUNCTION set_machine_working();
 
 
--- =========================================================
--- 2. Automatically update field status to 'Growth'
+-- Automatically update field status to 'Growth'
 --    when a crop is planted in the field
--- =========================================================
 CREATE OR REPLACE FUNCTION set_field_growth()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -400,9 +396,8 @@ FOR EACH ROW
 EXECUTE FUNCTION set_field_growth();
 
 
--- =========================================================
--- 3. Prevent duplicate user emails (custom error message)
--- =========================================================
+
+-- Prevent duplicate user emails (custom error message)
 CREATE OR REPLACE FUNCTION check_duplicate_email()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -425,10 +420,8 @@ FOR EACH ROW
 EXECUTE FUNCTION check_duplicate_email();
 
 
--- =========================================================
--- 4. Automatically set field status to 'Harvest'
+-- Automatically set field status to 'Harvest'
 --    when the farm's harvest date is reached
--- =========================================================
 CREATE OR REPLACE FUNCTION update_field_harvest_status()
 RETURNS TRIGGER AS $$
 BEGIN
