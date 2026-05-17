@@ -58,55 +58,6 @@ A comprehensive web-based agricultural management system built with Next.js, Pos
 - **Package Manager:** pnpm
 
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 12+
-- pnpm (or npm/yarn)
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd greenav
-```
-
-2. **Install dependencies**
-```bash
-pnpm install
-```
-
-3. **Set up environment variables**
-```bash
-# Create .env.local file
-echo "DATABASE_URL=postgresql://user:password@localhost:5432/greenav" > .env.local
-echo "JWT_SECRET=your-secret-key-here" >> .env.local
-echo "NODE_ENV=development" >> .env.local
-```
-
-4. **Initialize database**
-```bash
-# Create PostgreSQL database
-createdb greenav
-
-# Run schema (see corrected-schema.sql)
-psql greenav < corrected-schema.sql
-
-# Insert default users
-psql greenav << EOF
-INSERT INTO users (email, password, name, role) VALUES
-('admin@gmail.com', '$2b$10$...', 'Admin User', 'admin'),
-('farmer@gmail.com', '$2b$10$...', 'Farmer User', 'farmer');
-EOF
-```
-
-5. **Start development server**
-```bash
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
 ## 📱 User Workflows
 
 ### Admin Workflow
