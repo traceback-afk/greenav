@@ -355,3 +355,95 @@ CREATE OR REPLACE TRIGGER trg_check_sensor_alert
 AFTER INSERT ON generates
 FOR EACH ROW
 EXECUTE FUNCTION check_sensor_alert();
+
+
+
+-- =========================================================
+-- 1. Automatically update machine status to 'working'
+--    when a machine is assigned to a field
+-- =========================================================
+CREATE OR REPLACE FUNCTION set_machine_working()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE machine
+    SET status = 'working'
+    WHERE id = NEW.machine_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_machine_working
+AFTER INSERT ON works_on_field
+FOR EACH ROW
+EXECUTE FUNCTION set_machine_working();
+
+
+-- =========================================================
+-- 2. Automatically update field status to 'Growth'
+--    when a crop is planted in the field
+-- =========================================================
+CREATE OR REPLACE FUNCTION set_field_growth()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE field
+    SET status = 'Growth'
+    WHERE id = NEW.field_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_field_growth
+AFTER INSERT ON planted_in
+FOR EACH ROW
+EXECUTE FUNCTION set_field_growth();
+
+
+-- =========================================================
+-- 3. Prevent duplicate user emails (custom error message)
+-- =========================================================
+CREATE OR REPLACE FUNCTION check_duplicate_email()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM users
+        WHERE email = NEW.email
+          AND id <> COALESCE(NEW.id, 0)
+    ) THEN
+        RAISE EXCEPTION 'Email % is already registered.', NEW.email;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_duplicate_email
+BEFORE INSERT OR UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION check_duplicate_email();
+
+
+-- =========================================================
+-- 4. Automatically set field status to 'Harvest'
+--    when the farm's harvest date is reached
+-- =========================================================
+CREATE OR REPLACE FUNCTION update_field_harvest_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.harvest_date IS NOT NULL
+       AND NEW.harvest_date <= CURRENT_DATE THEN
+        UPDATE field
+        SET status = 'Harvest'
+        WHERE farm_id = NEW.id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_field_harvest_status
+AFTER INSERT OR UPDATE ON farm
+FOR EACH ROW
+EXECUTE FUNCTION update_field_harvest_status();
